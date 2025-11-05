@@ -63,6 +63,14 @@ export type College = {
   name: string;
 };
 
+export type Badge = {
+    id?: string;
+    name: string;
+    description: string;
+    iconUrl: string;
+    category: 'milestone' | 'skill' | 'social' | 'special';
+}
+
 export type Payment = {
     id?: string;
     userId: string;

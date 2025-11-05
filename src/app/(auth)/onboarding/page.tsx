@@ -108,17 +108,19 @@ export default function OnboardingPage() {
       const userId = userCredential.user.uid;
       const collegeIdUrl = await uploadCollegeId(userId, collegeId);
       
-      // This would typically be a server-side update after upload
-      // For now, doing it client-side for simplicity.
       const { updateUserDocument } = await import('@/lib/firebase/firestore');
-      await updateUserDocument(userId, { collegeIdUrl });
+      // Award 25 more points for completing onboarding
+      await updateUserDocument(userId, { 
+          collegeIdUrl, 
+          points: 75 // 50 from signup + 25 from onboarding
+      });
 
       setShowConfetti(true);
       setTimeout(() => {
         router.push('/dashboard');
         toast({
           title: 'Welcome to the Community!',
-          description: "You've earned your first badge and some points!",
+          description: "You've earned 75 points and the 'First Steps' badge!",
         });
       }, 5000);
 
