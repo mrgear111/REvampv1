@@ -14,7 +14,6 @@ export function Header() {
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard', loggedIn: true },
-    { href: '/dashboard/events', label: 'Events', loggedIn: true },
     { href: '/admin/verifications', label: 'Verifications', admin: true },
     { href: '/admin/events/create', label: 'Create Event', admin: true },
   ];
@@ -26,30 +25,36 @@ export function Header() {
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <LogoIcon className="h-6 w-6 text-primary" />
             <span className="font-bold font-headline sm:inline-block">
-              REvamp Authenticator
+              REvamp
             </span>
           </Link>
-          <nav className="flex items-center gap-6 text-sm">
-            {navLinks.map((link) => {
-              const showLink =
-                (link.loggedIn && user && !link.admin) || (link.admin && user?.isAdmin);
-              if (!showLink) return null;
-
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'transition-colors hover:text-foreground/80',
-                    pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/dashboard')
-                      ? 'text-foreground font-semibold'
-                      : 'text-foreground/60'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
+          <nav className="hidden items-center gap-6 text-sm md:flex">
+            {user && (
+              <Link
+                href="/dashboard"
+                className={cn(
+                  'transition-colors hover:text-foreground/80',
+                  pathname.startsWith('/dashboard')
+                    ? 'text-foreground font-semibold'
+                    : 'text-foreground/60'
+                )}
+              >
+                Dashboard
+              </Link>
+            )}
+             {user?.isAdmin && (
+              <Link
+                href="/admin/verifications"
+                className={cn(
+                  'transition-colors hover:text-foreground/80',
+                  pathname.startsWith('/admin')
+                    ? 'text-foreground font-semibold'
+                    : 'text-foreground/60'
+                )}
+              >
+                Admin Panel
+              </Link>
+            )}
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
