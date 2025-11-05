@@ -63,7 +63,7 @@ const formSchema = z.object({
   path: ['primaryDomain'],
 });
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 
 const domainsList = [
     { id: 'web-dev', label: 'Web Development' },
@@ -170,15 +170,9 @@ export default function OnboardingPage() {
     { id: 3, title: 'Verify your Student Status', fields: ['collegeId'] as FieldName[] },
     { id: 4, title: 'Choose Your Domains', fields: ['domains'] as FieldName[] },
     { id: 5, title: 'Select Your Primary Domain', fields: ['primaryDomain'] as FieldName[] },
-    { id: 6, title: 'Onboarding Complete!', fields: [] as FieldName[] },
   ];
 
   const handleNext = async () => {
-    if (step === TOTAL_STEPS) {
-      await form.handleSubmit(onSubmit)();
-      return;
-    }
-    
     const fields = steps[step - 1].fields;
     if (fields.length > 0) {
         const output = await form.trigger(fields as FieldName[], { shouldFocus: true });
@@ -187,6 +181,8 @@ export default function OnboardingPage() {
 
     if (step < TOTAL_STEPS) {
       setStep(step + 1);
+    } else {
+        await form.handleSubmit(onSubmit)();
     }
   };
 
@@ -196,7 +192,7 @@ export default function OnboardingPage() {
     }
   };
 
-  if (step === TOTAL_STEPS && showConfetti) {
+  if (showConfetti) {
       return (
           <Card className="w-full max-w-lg text-center p-8">
               {width && height && <Confetti width={width} height={height} recycle={false} />}
@@ -223,7 +219,7 @@ export default function OnboardingPage() {
           {steps[step - 1].title}
         </CardTitle>
         <CardDescription>
-           {step < TOTAL_STEPS ? `Join the REvamp community. Step ${step} of ${TOTAL_STEPS - 1}` : 'Almost there!'}
+           {`Join the REvamp community. Step ${step} of ${TOTAL_STEPS}`}
         </CardDescription>
         <Progress value={(step / TOTAL_STEPS) * 100} className="w-full mt-2" />
       </CardHeader>
@@ -362,15 +358,6 @@ export default function OnboardingPage() {
                     )}
                  />
             )}
-             {step === TOTAL_STEPS && (
-                <div className='text-center space-y-4 flex flex-col items-center justify-center h-full'>
-                    <PartyPopper className="h-16 w-16 text-green-500" />
-                    <h3 className="text-xl font-bold">You're ready to go!</h3>
-                    <p className='text-muted-foreground'>
-                        Click the final button to complete your registration and start your journey with REvamp.
-                    </p>
-                </div>
-            )}
           </form>
         </Form>
       </CardContent>
@@ -445,5 +432,3 @@ function LogoIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-
-    
