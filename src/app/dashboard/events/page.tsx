@@ -92,7 +92,8 @@ export default function EventsPage() {
             });
 
             if (!orderRes.ok) {
-                throw new Error('Failed to create Razorpay order.');
+                const errorData = await orderRes.json();
+                throw new Error(errorData.error || 'Failed to create Razorpay order.');
             }
 
             const { order } = await orderRes.json();
@@ -126,23 +127,32 @@ export default function EventsPage() {
                         if (!verifyRes.ok) {
                              throw new Error('Payment verification failed.');
                         }
-
-                        // 4. Create registration document
-                        await addDoc(collection(db, 'registrations'), {
-                            userId: user.uid,
-                            eventId: event.id,
-                            paymentId: response.razorpay_payment_id,
-                            paymentStatus: 'success',
-                            attended: false,
-                            registeredAt: serverTimestamp(),
-                        });
                         
-                        toast({
-                            title: 'Payment Successful!',
-                            description: "You're registered for the event.",
-                        });
+                        const verificationData = await verifyRes.json();
 
-                        window.open(event.lumaUrl || '#', '_blank');
+                        if (verificationData.success) {
+                            // 4. Create registration document in Firestore
+                            await addDoc(collection(db, "registrations"), {
+                                userId: user.uid,
+                                eventId: event.id,
+                                paymentId: response.razorpay_payment_id,
+                                paymentStatus: "success",
+                                attended: false,
+                                registeredAt: serverTimestamp(),
+                            });
+
+                            toast({
+                                title: "Registration Successful",
+                                description: `You're all set for ${event.title}!`,
+                            });
+
+                            // 5. Unlock Luma Link
+                            if (event.lumaUrl) {
+                                window.open(event.lumaUrl, "_blank");
+                            }
+                        } else {
+                            throw new Error('Payment verification failed.');
+                        }
                     },
                     prefill: {
                         name: user.displayName || 'Anonymous',
