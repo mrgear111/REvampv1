@@ -67,14 +67,14 @@ export default function DashboardPage() {
                 {user.uid}
               </code>
             </p>
-            <p className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <span className="font-semibold">Email Verified:</span> 
               {user.emailVerified ? (
                 <Badge variant="secondary" className='bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'>Verified</Badge>
               ) : (
                 <Badge variant="destructive">Not Verified</Badge>
               )}
-            </p>
+            </div>
           </div>
         </CardContent>
       </Card>
