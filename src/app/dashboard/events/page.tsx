@@ -1,23 +1,33 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
-import type { Event } from '@/types';
+import { collection, query, where, getDocs, orderBy, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
+import type { Event as EventType } from '@/types';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Calendar, Tag, Ticket, ArrowRight } from 'lucide-react';
+import { Calendar, Ticket, ArrowRight, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
 
 export default function EventsPage() {
-    const [events, setEvents] = useState<Event[]>([]);
+    const [events, setEvents] = useState<EventType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isPaying, setIsPaying] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const { user } = useAuth(); // Assuming useAuth provides the full user object from firestore eventually
+    const { user } = useAuth();
+    const { toast } = useToast();
 
     // This is a placeholder. In a real app, you'd fetch this from the user's profile in firestore.
     const userProfile = {
@@ -36,9 +46,6 @@ export default function EventsPage() {
             try {
                 const eventsRef = collection(db, 'events');
                 
-                // Simple query for now. Firestore does not support OR queries on different fields.
-                // A more complex filtering would require multiple queries and client-side merging,
-                // or a more advanced backend/search solution like Algolia.
                 const q = query(
                     eventsRef,
                     where('targetYears', 'array-contains', userProfile.year),
@@ -46,12 +53,11 @@ export default function EventsPage() {
                 );
 
                 const querySnapshot = await getDocs(q);
-                const fetchedEvents: Event[] = [];
+                const fetchedEvents: EventType[] = [];
                 querySnapshot.forEach((doc) => {
-                    const eventData = { id: doc.id, ...doc.data() } as Event;
-                    // Additional client-side filtering
+                    const eventData = { id: doc.id, ...doc.data() } as EventType;
                     if (eventData.colleges.includes(userProfile.college) || eventData.domains.includes(userProfile.primaryDomain)) {
-                       if (eventData.date.toDate() > new Date()) { // Only show future events
+                       if (eventData.date.toDate() > new Date()) {
                          fetchedEvents.push(eventData);
                        }
                     }
@@ -68,7 +74,113 @@ export default function EventsPage() {
         fetchEvents();
     }, [user]);
 
-    const EventCard = ({ event }: { event: Event }) => (
+    const handleRegistration = async (event: EventType) => {
+        if (!user || !event.id) return;
+
+        if (event.isFree) {
+            window.open(event.lumaUrl || '#', '_blank');
+            return;
+        }
+
+        setIsPaying(event.id);
+        try {
+            // 1. Create Razorpay order
+            const orderRes = await fetch('/api/razorpay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: event.price, eventId: event.id }),
+            });
+
+            if (!orderRes.ok) {
+                throw new Error('Failed to create Razorpay order.');
+            }
+
+            const { order } = await orderRes.json();
+
+            // 2. Load Razorpay script
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onerror = () => {
+                throw new Error('Razorpay SDK failed to load.');
+            };
+            script.onload = async () => {
+                 const options = {
+                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    amount: order.amount,
+                    currency: order.currency,
+                    name: 'REvamp',
+                    description: `Payment for ${event.title}`,
+                    order_id: order.id,
+                    handler: async function (response: any) {
+                        // 3. Verify payment
+                        const verifyRes = await fetch('/api/razorpay', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                            }),
+                        });
+                        
+                        if (!verifyRes.ok) {
+                             throw new Error('Payment verification failed.');
+                        }
+
+                        // 4. Create registration document
+                        await addDoc(collection(db, 'registrations'), {
+                            userId: user.uid,
+                            eventId: event.id,
+                            paymentId: response.razorpay_payment_id,
+                            paymentStatus: 'success',
+                            attended: false,
+                            registeredAt: serverTimestamp(),
+                        });
+                        
+                        toast({
+                            title: 'Payment Successful!',
+                            description: "You're registered for the event.",
+                        });
+
+                        window.open(event.lumaUrl || '#', '_blank');
+                    },
+                    prefill: {
+                        name: user.displayName || 'Anonymous',
+                        email: user.email || '',
+                    },
+                    theme: {
+                        color: '#673AB7',
+                    },
+                };
+                
+                const rzp = new window.Razorpay(options);
+                rzp.on('payment.failed', function (response: any) {
+                    console.error(response.error);
+                    toast({
+                        title: 'Payment Failed',
+                        description: response.error.description || 'Something went wrong.',
+                        variant: 'destructive',
+                    });
+                });
+
+                rzp.open();
+            };
+
+            document.body.appendChild(script);
+
+        } catch (err: any) {
+            console.error('Payment Error:', err);
+            toast({
+                title: 'Payment Error',
+                description: err.message || 'Could not initiate payment.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsPaying(null);
+        }
+    }
+
+    const EventCard = ({ event }: { event: EventType }) => (
         <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
             <CardHeader className="p-0">
                 <div className="relative aspect-video w-full">
@@ -89,14 +201,15 @@ export default function EventsPage() {
                  <div>
                     <span className="font-bold text-lg">{event.isFree ? 'Free' : `₹${event.price / 100}`}</span>
                 </div>
-                <Button asChild>
-                    <Link href={event.lumaUrl || '#'} target="_blank">
-                        Register <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
+                <Button onClick={() => handleRegistration(event)} disabled={isPaying === event.id}>
+                    {isPaying === event.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isPaying === event.id ? 'Processing...' : event.isFree ? 'Register' : 'Pay & Register'} 
+                    {!isPaying && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
             </CardFooter>
         </Card>
     );
+
      const EventCardSkeleton = () => (
         <Card className="flex flex-col overflow-hidden">
             <Skeleton className="w-full aspect-video" />

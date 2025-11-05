@@ -62,3 +62,14 @@ export type College = {
   id: string;
   name: string;
 };
+
+export type Payment = {
+    id?: string;
+    userId: string;
+    eventId: string;
+    amount: number; // in paise
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    status: 'pending' | 'success' | 'failed';
+    createdAt: Timestamp;
+}
