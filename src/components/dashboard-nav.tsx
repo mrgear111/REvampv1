@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Calendar, Gift, BookOpen, User, Rocket } from 'lucide-react';
+import { Home, Calendar, Gift, BookOpen, User, Rocket, School } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 
 const navItems = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/dashboard/events', label: 'My Events', icon: Calendar },
+  { href: '/dashboard/workshops', label: 'Workshops', icon: School },
   { href: '/dashboard/perks', label: 'Perks', icon: Gift },
   { href: '/dashboard/resources', label: 'Resources', icon: BookOpen },
   { href: '/dashboard/profile', label: 'Profile', icon: User },
