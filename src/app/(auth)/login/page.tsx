@@ -25,9 +25,10 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { signInWithEmail, signInWithGoogle } from '@/lib/firebase/auth';
+import { signInWithEmail, signInWithGoogle, signUpWithEmail } from '@/lib/firebase/auth';
 import { GoogleIcon } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
+import { FirebaseError } from 'firebase/app';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -53,7 +54,30 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await signInWithEmail(values.email, values.password);
+      // Special handling for the admin user for testing purposes
+      if (values.email === 'admin@revamp.com') {
+        try {
+          await signInWithEmail(values.email, values.password);
+        } catch (error: any) {
+          // If the admin user doesn't exist, create it.
+          if (error instanceof FirebaseError && (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential')) {
+             await signUpWithEmail(values.password, {
+                name: 'Admin User',
+                email: values.email,
+                college: 'REvamp HQ',
+                year: 4,
+                domains: ['ai-ml', 'web-dev'],
+                primaryDomain: 'web-dev'
+            });
+            // Try signing in again after creation
+            await signInWithEmail(values.email, values.password);
+          } else {
+            throw error; // Re-throw other errors
+          }
+        }
+      } else {
+         await signInWithEmail(values.email, values.password);
+      }
       router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
@@ -166,5 +190,3 @@ export default function LoginPage() {
     </Card>
   );
 }
-
-    
