@@ -54,36 +54,20 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      // Special handling for the admin user for testing purposes
-      if (values.email === 'admin@revamp.com') {
-        try {
-          await signInWithEmail(values.email, values.password);
-        } catch (error: any) {
-          // If the admin user doesn't exist, create it.
-          if (error instanceof FirebaseError && (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential')) {
-             await signUpWithEmail(values.password, {
-                name: 'Admin User',
-                email: values.email,
-                college: 'REvamp HQ',
-                year: 4,
-                domains: ['ai-ml', 'web-dev'],
-                primaryDomain: 'web-dev'
-            });
-            // Try signing in again after creation
-            await signInWithEmail(values.email, values.password);
-          } else {
-            throw error; // Re-throw other errors
-          }
-        }
-      } else {
-         await signInWithEmail(values.email, values.password);
-      }
+      // The logic to handle admin creation is now in the auth hook based on the .env variable
+      // For any user, we just try to sign them in. If they don't exist, they'll get an error.
+      // Admins should sign up through the regular onboarding flow first.
+      await signInWithEmail(values.email, values.password);
       router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
+      let description = error.message || 'An unexpected error occurred.';
+      if (error instanceof FirebaseError && error.code === 'auth/invalid-credential') {
+          description = "Invalid email or password. Please try again or sign up if you don't have an account.";
+      }
       toast({
         title: 'Login Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: description,
         variant: 'destructive',
       });
     } finally {
