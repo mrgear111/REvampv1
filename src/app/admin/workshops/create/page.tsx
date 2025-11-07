@@ -64,19 +64,21 @@ export default function CreateWorkshopPage() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            title: '',
-            description: '',
-            duration: 1,
-            meetLink: '',
-            domains: [],
-            targetYears: [],
-            isFree: true,
-            maxSeats: 50,
-            certificate: false,
+            title: 'Advanced React Patterns',
+            description: 'Dive deep into advanced React concepts like higher-order components, render props, context API, and performance optimization techniques. This workshop is for students with a solid foundation in React.',
+            duration: 2.5,
+            meetLink: 'https://meet.google.com/qwe-rty-uio',
+            domains: ['web-dev'],
+            targetYears: [2, 3, 4],
+            isFree: false,
+            price: 299,
+            maxSeats: 40,
+            certificate: true,
             clustering: 'multi-campus',
             collegeIds: [],
-            time: '10:00',
-            price: 0,
+            time: '14:00',
+            date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 2 weeks from now
+            registrationDeadline: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000), // 12 days from now
         },
         mode: 'onChange',
     });
