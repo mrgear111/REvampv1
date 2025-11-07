@@ -3,6 +3,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import type { Event, Workshop } from '@/types';
 
 const razorpay = new Razorpay({
     key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
@@ -11,30 +12,48 @@ const razorpay = new Razorpay({
 
 // Create an order
 export async function POST(request: Request) {
-    const { amount, eventId } = await request.json();
+    const { amount, id, type } = await request.json();
 
-    if (!amount || !eventId) {
-        return NextResponse.json({ error: 'Amount and Event ID are required' }, { status: 400 });
+    if (!amount || !id || !type) {
+        return NextResponse.json({ error: 'Amount, ID, and type (event/workshop) are required' }, { status: 400 });
     }
 
-    // Fetch event details to confirm price server-side
-    const eventRef = doc(db, 'events', eventId);
-    const eventSnap = await getDoc(eventRef);
+    let itemRef;
+    let itemSnap;
+    let itemData;
 
-    if (!eventSnap.exists()) {
-        return NextResponse.json({ error: 'Event not found' }, { status: 404 });
-    }
-    const eventData = eventSnap.data();
-
-    // The price from client is already in paise.
-    if (eventData.price !== amount) {
-         return NextResponse.json({ error: 'Price mismatch' }, { status: 400 });
+    try {
+        if (type === 'event') {
+            itemRef = doc(db, 'events', id);
+            itemSnap = await getDoc(itemRef);
+            if (!itemSnap.exists()) {
+                return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+            }
+            itemData = itemSnap.data() as Event;
+        } else if (type === 'workshop') {
+            itemRef = doc(db, 'workshops', id);
+            itemSnap = await getDoc(itemRef);
+             if (!itemSnap.exists()) {
+                return NextResponse.json({ error: 'Workshop not found' }, { status: 404 });
+            }
+            itemData = itemSnap.data() as Workshop;
+        } else {
+             return NextResponse.json({ error: 'Invalid type specified' }, { status: 400 });
+        }
+    
+        // The price from client is already in paise.
+        if (itemData.price !== amount) {
+             return NextResponse.json({ error: 'Price mismatch' }, { status: 400 });
+        }
+    } catch(e) {
+        console.error("Error fetching item from firestore", e);
+        return NextResponse.json({ error: 'Could not verify item details.' }, { status: 500 });
     }
     
     const options = {
         amount: amount, // amount in the smallest currency unit
         currency: 'INR',
-        receipt: `receipt_event_${eventId}_${Date.now()}`,
+        receipt: `receipt_${type}_${id}_${Date.now()}`,
     };
 
     try {
