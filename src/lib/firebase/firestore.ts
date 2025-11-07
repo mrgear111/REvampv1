@@ -26,12 +26,13 @@ export async function updateUserDocument(userId: string, data: Partial<User>) {
     });
 }
 
-export async function createEvent(eventData: Omit<Event, 'id' | 'createdAt' | 'createdBy'>, createdBy: string) {
+export async function createEvent(eventData: Omit<Event, 'id' | 'createdAt' | 'createdBy' | 'meetLink'>, createdBy: string) {
     const eventsCollection = collection(db, 'events');
     const newEventData = {
         ...eventData,
         createdBy,
         createdAt: serverTimestamp(),
+        meetLink: eventData.lumaUrl,
     };
     const eventRef = await addDoc(eventsCollection, newEventData);
     return eventRef.id;

@@ -33,7 +33,7 @@ export type Event = {
   bannerUrl: string;
   date: Timestamp;
   duration: number; // hours
-  meetLink: string;
+  meetLink?: string;
   isFree: boolean;
   price: number; // in paise
   domains: string[];

@@ -61,9 +61,7 @@ const formSchema = z.object({
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   banner: z.instanceof(File).refine(file => file.size <= MAX_BANNER_SIZE, 'Banner size must be 1MB or less.').refine(file => ACCEPTED_BANNER_TYPES.includes(file.type), 'Only .jpg, .png, and .webp files are accepted.'),
   date: z.date({ required_error: 'A date is required.' }),
-  time: z.string().min(1, 'Time is required'),
   duration: z.coerce.number().min(0.5, 'Duration must be at least 0.5 hours.'),
-  meetLink: z.string().url('Please enter a valid URL.'),
   isFree: z.boolean(),
   price: z.coerce.number().optional(),
   domains: z.array(z.string()).min(1, 'Select at least one domain.'),
@@ -88,9 +86,7 @@ export default function CreateEventPage() {
       title: '',
       description: '',
       date: new Date(),
-      time: '',
       duration: 1,
-      meetLink: '',
       isFree: true,
       price: 0,
       domains: [],
@@ -124,10 +120,7 @@ export default function CreateEventPage() {
     }
     setIsLoading(true);
     try {
-      // Combine date and time
-      const [hours, minutes] = values.time.split(':').map(Number);
       const eventDate = new Date(values.date);
-      eventDate.setHours(hours, minutes);
 
       const tempEventId = `temp_${Date.now()}`;
       const bannerUrl = await uploadEventBanner(tempEventId, values.banner);
@@ -137,11 +130,10 @@ export default function CreateEventPage() {
           date: Timestamp.fromDate(eventDate),
           bannerUrl,
           price: values.isFree ? 0 : values.price! * 100, // convert to paise
+          meetLink: values.lumaUrl || '',
       };
       // @ts-ignore
       delete eventData.banner;
-      // @ts-ignore
-      delete eventData.time;
 
       const eventId = await createEvent(eventData, user.uid);
       
@@ -186,6 +178,7 @@ export default function CreateEventPage() {
                                 Fetch
                             </Button>
                       </div>
+                      <FormDescription>This will be used as the registration and meeting link.</FormDescription>
                       <FormMessage />
                       </FormItem>
                   )}
@@ -256,7 +249,7 @@ export default function CreateEventPage() {
                 </FormItem>
             )} />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <FormField
                 control={form.control}
                 name="date"
@@ -298,20 +291,6 @@ export default function CreateEventPage() {
                     </FormItem>
                 )}
                 />
-
-                <FormField
-                    control={form.control}
-                    name="time"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Time</FormLabel>
-                        <FormControl>
-                            <Input type="time" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
                 
                 <FormField
                     control={form.control}
@@ -327,20 +306,6 @@ export default function CreateEventPage() {
                     )}
                 />
             </div>
-
-            <FormField
-              control={form.control}
-              name="meetLink"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Google Meet Link</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://meet.google.com/..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                  <FormField
