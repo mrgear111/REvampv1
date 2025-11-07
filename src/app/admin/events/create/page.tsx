@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,7 +32,6 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { createEvent } from '@/lib/firebase/firestore';
-import { uploadEventBanner } from '@/lib/firebase/storage';
 import { useAuth } from '@/hooks/use-auth';
 import type { College } from '@/types';
 import { Timestamp } from 'firebase/firestore';
@@ -86,8 +86,6 @@ export default function CreateEventPage() {
       lumaUrl: '',
       title: '',
       description: '',
-      date: new Date(),
-      duration: 1,
       isFree: true,
       price: 0,
       domains: [],
@@ -130,21 +128,13 @@ export default function CreateEventPage() {
     }
     setIsLoading(true);
     try {
-      const eventDate = new Date(values.date);
-
-      const tempEventId = `temp_${Date.now()}`;
-      const bannerUrl = await uploadEventBanner(tempEventId, values.banner);
-
       const eventData = {
           ...values,
-          date: Timestamp.fromDate(eventDate),
-          bannerUrl,
+          date: Timestamp.fromDate(values.date),
           price: values.isFree ? 0 : values.price! * 100, // convert to paise
       };
-      // @ts-ignore
-      delete eventData.banner;
 
-      const eventId = await createEvent(eventData, user.uid);
+      await createEvent(eventData, user.uid);
       
       toast({
         title: 'Event Created Successfully!',
