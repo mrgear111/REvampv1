@@ -89,7 +89,7 @@ export default function EventsPage() {
                 </TabsList>
                 <TabsContent value="discover">
                     <p className="text-muted-foreground my-4">Explore and register for upcoming events from our community.</p>
-                     <div className='rounded-xl overflow-hidden border bg-card'>
+                     <div className='rounded-lg overflow-hidden'>
                         {lumaCalendarUrl ? (
                             <iframe 
                                 src={lumaCalendarUrl}
@@ -100,7 +100,8 @@ export default function EventsPage() {
                                 aria-hidden="false"
                                 tabIndex={0}
                                 style={{
-                                    backgroundColor: 'hsl(var(--card))',
+                                    border: '1px solid #bfcbda88',
+                                    borderRadius: '4px'
                                 }}
                             ></iframe>
                         ) : (
