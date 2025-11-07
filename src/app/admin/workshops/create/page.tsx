@@ -48,7 +48,6 @@ export default function CreateWorkshopPage() {
             price: 0,
             maxSeats: 50,
             time: '14:00',
-            date: new Date(),
         },
         mode: 'onChange',
     });
@@ -63,15 +62,15 @@ export default function CreateWorkshopPage() {
         try {
             const [hours, minutes] = values.time.split(':').map(Number);
             const workshopDateTime = new Date(values.date);
-            workshopDateTime.setHours(hours, minutes);
+            workshopDateTime.setHours(hours, minutes, 0, 0); // Set hours and minutes, reset seconds/ms
 
             // Destructure banner from values, as it's handled separately
-            const { banner, ...workshopBaseData } = values;
+            const { banner, date, time, ...workshopBaseData } = values;
 
             const workshopData = {
                 ...workshopBaseData,
+                price: workshopBaseData.price * 100, // Convert to paise
                 date: Timestamp.fromDate(workshopDateTime),
-                price: values.price * 100, // Convert to paise
             };
             
             await createWorkshop(workshopData, banner, user.uid);
@@ -114,7 +113,7 @@ export default function CreateWorkshopPage() {
                              <FormField control={form.control} name="location" render={({ field }) => (
                                 <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., https://meet.google.com/xyz or '123 Main St, Anytown'" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
-                            <FormField control={form.control} name="banner" render={({ field }) => (
+                            <FormField control={form.control} name="banner" render={({ field: { onChange, value, ...rest }}) => (
                                 <FormItem>
                                     <FormLabel>Workshop Banner</FormLabel>
                                     <FormControl>
@@ -122,13 +121,13 @@ export default function CreateWorkshopPage() {
                                             <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">
                                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                                     <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />
-                                                    {field.value ? (
-                                                        <p className="font-semibold text-primary">{field.value.name}</p>
+                                                    {value?.name ? (
+                                                        <p className="font-semibold text-primary">{value.name}</p>
                                                     ) : (
                                                         <><p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p><p className="text-xs text-muted-foreground">PNG, JPG, or WEBP (MAX. 5MB)</p></>
                                                     )}
                                                 </div>
-                                                <Input id="dropzone-file" type="file" accept="image/*" className="hidden" onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)} />
+                                                <Input id="dropzone-file" type="file" accept="image/*" className="hidden" onChange={(e) => onChange(e.target.files ? e.target.files[0] : null)} {...rest} />
                                             </label>
                                         </div>
                                     </FormControl>
@@ -162,7 +161,7 @@ export default function CreateWorkshopPage() {
                                 <FormItem><FormLabel>Start Time (24h format)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                              <FormField control={form.control} name="price" render={({ field }) => (
-                                    <FormItem><FormLabel>Price (₹)</FormLabel><FormControl><Input type="number" placeholder="Enter 0 for a free workshop" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Price (₹)</FormLabel><FormControl><Input type="number" placeholder="Enter 0 for a free workshop" {...field} /></FormControl><FormDescription>Enter 0 for a free workshop.</FormDescription><FormMessage /></FormItem>
                                 )} />
                              <FormField control={form.control} name="maxSeats" render={({ field }) => (
                                <FormItem><FormLabel>Max Capacity</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
