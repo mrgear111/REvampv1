@@ -21,6 +21,7 @@ export async function POST(request: Request) {
     let itemRef;
     let itemSnap;
     let itemData;
+    let itemName;
 
     try {
         if (type === 'event') {
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: 'Event not found' }, { status: 404 });
             }
             itemData = itemSnap.data() as Event;
+            itemName = itemData.title;
         } else if (type === 'workshop') {
             itemRef = doc(db, 'workshops', id);
             itemSnap = await getDoc(itemRef);
@@ -37,6 +39,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: 'Workshop not found' }, { status: 404 });
             }
             itemData = itemSnap.data() as Workshop;
+            itemName = itemData.title;
         } else {
              return NextResponse.json({ error: 'Invalid type specified' }, { status: 400 });
         }
@@ -54,6 +57,11 @@ export async function POST(request: Request) {
         amount: amount, // amount in the smallest currency unit
         currency: 'INR',
         receipt: `receipt_${type}_${id}_${Date.now()}`,
+        notes: {
+            item_id: id,
+            item_type: type,
+            item_name: itemName,
+        }
     };
 
     try {
@@ -84,8 +92,6 @@ export async function PUT(request: Request) {
     const isAuthentic = expectedSignature === razorpay_signature;
 
     if (isAuthentic) {
-        // In a real app, you would save payment details to your 'payments' collection here
-        // This is handled client-side for now for simplicity, but server-side is more robust.
         return NextResponse.json({ success: true, paymentId: razorpay_payment_id });
     } else {
         return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 400 });

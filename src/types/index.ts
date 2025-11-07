@@ -148,5 +148,5 @@ export type WorkshopRegistration = {
   email: string; // Attendee email
   phone: string; // Attendee phone
   organization?: string;
+  year?: string;
 };
-    
