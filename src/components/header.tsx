@@ -73,14 +73,14 @@ export function Header() {
                 <DropdownMenuContent align="start">
                   <DropdownMenuLabel>Management</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push('/admin/users')}>
+                    Users
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/admin/workshops')}>
                     Workshops
                   </DropdownMenuItem>
                    <DropdownMenuItem onClick={() => router.push('/admin/events/create')}>
                     Events
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/admin/verifications')}>
-                    Verifications
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/admin/ambassadors')}>
                     Ambassadors

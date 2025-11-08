@@ -7,10 +7,7 @@ export type User = {
   name: string;
   college: string;
   year: number;
-  verificationStatus: 'pending' | 'verified' | 'rejected';
   createdAt: Timestamp;
-  collegeIdUrl?: string;
-  studentIdNumber?: string;
   primaryDomain: string;
   domains: string[];
   points: number;
