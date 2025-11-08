@@ -129,10 +129,23 @@ export type Workshop = {
   bannerUrl: string;
   date: Timestamp;
   location: string;
-  price: number; // In paise
+  price: number; // In rupees
   maxSeats: number;
   createdBy: string; // Admin's userId
   createdAt: Timestamp;
+  // New fields
+  prerequisites?: string;
+  learningOutcomes?: string;
+  materials?: Array<{
+    title: string;
+    url: string;
+    type: 'slides' | 'code' | 'document' | 'video' | 'other';
+  }>;
+  recordingEnabled?: boolean;
+  certificatesEnabled?: boolean;
+  feedbackEnabled?: boolean;
+  preAssessment?: boolean;
+  postAssessment?: boolean;
 };
 
 export type WorkshopRegistration = {
