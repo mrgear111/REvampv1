@@ -29,12 +29,16 @@ export default function StudentWorkshopsPage() {
         const fetchWorkshops = async () => {
             setIsLoading(true);
             try {
-                // Fetch all upcoming workshops
+                console.log('Fetching workshops for dashboard...');
+                // Fetch all workshops, not just upcoming ones
                 const workshopsQuery = query(
                     collection(db, 'workshops'), 
-                    where('date', '>', Timestamp.now()),
-                    orderBy('date', 'asc')
+                    orderBy('date', 'desc')
                 );
+                
+                // For debugging
+                const workshopsCollection = collection(db, 'workshops');
+                console.log('Workshops collection reference:', workshopsCollection);
 
                 const querySnapshot = await getDocs(workshopsQuery);
                 const fetchedWorkshops: Workshop[] = [];

@@ -22,12 +22,21 @@ export default function AdminWorkshopsPage() {
         const fetchWorkshops = async () => {
             setIsLoading(true);
             try {
+                console.log('Fetching workshops for admin panel...');
                 const workshopsQuery = query(collection(db, 'workshops'), orderBy('createdAt', 'desc'));
+                console.log('Workshop query:', workshopsQuery);
+                
                 const querySnapshot = await getDocs(workshopsQuery);
+                console.log('Query snapshot:', querySnapshot);
+                console.log('Number of workshops found:', querySnapshot.size);
+                
                 const fetchedWorkshops: Workshop[] = [];
                 querySnapshot.forEach((doc) => {
+                    console.log('Workshop document:', doc.id, doc.data());
                     fetchedWorkshops.push({ id: doc.id, ...doc.data() } as Workshop);
                 });
+                
+                console.log('Fetched workshops:', fetchedWorkshops);
                 setWorkshops(fetchedWorkshops);
             } catch (error) {
                 console.error("Error fetching workshops:", error);

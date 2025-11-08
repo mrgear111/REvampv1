@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow public read access to all files
+    match /{allPaths=**} {
+      allow read: if true;
+      
+      // Allow write access to authenticated users
+      allow write: if request.auth != null;
+      
+      // Allow admin users full access
+      // Uncomment and modify if you have admin roles in your app
+      // allow write: if request.auth != null && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Special rules for event banners
+    match /events/{eventId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Special rules for workshop banners
+    match /workshops/{workshopId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
